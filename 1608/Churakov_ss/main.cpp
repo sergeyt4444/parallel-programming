@@ -137,10 +137,15 @@ int main(int argc, char* argv[])
 				cout  << result[i] << "  ";
 			}
 			times = MPI_Wtime();
+			cout << endl;
 			cout << "time: " << (times - timef) << endl;
 			delete[] array;
 			delete[] vector;
 			delete[] result;
+			delete[] buf;
+			delete[] sizes;
+			delete[] place;
+			delete[] res;
 		}
 		else
 		{
