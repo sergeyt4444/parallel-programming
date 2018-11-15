@@ -1,14 +1,15 @@
 #include <iostream>
+#include <iomanip> 
 #include "time.h"
 #include <cstdlib>
 #include "mpi.h"
 using namespace std;
 
-void RandomizeArray(double* rarray, int size)
+void RandomizeArray(double* rarray, int size, int min = -50, int max = 50)
 {
 	for (int i = 0; i < size; i++)
 	{
-		*(rarray + i) = rand() % 101 - 50;
+		*(rarray + i) = rand() % (max - min + 1) + min ;
 	}
 }
 
@@ -16,7 +17,7 @@ void PrintVector(double* arr, int size)
 {
 	for (int i = 0; i < size; i++)
 	{
-		cout << arr[i] << " ";
+		cout << setw(3) << arr[i] << " ";
 	}
 }
 
@@ -53,16 +54,29 @@ int main(int argc, char* argv[])
 		timef = MPI_Wtime();
 		tickt = MPI_Wtick();
 		int Rows, Cols;
-		if (argc != 3)
+		if (argc != 5 && argc!=3)
 			return 1;
 		Rows = atoi(argv[2]);
 		Cols = atoi(argv[1]);
 		if (Cols < 1 || Rows < 1)
 			return 1;
 		double* array = new double[Rows*Cols];
-		RandomizeArray(array, Rows*Cols);
 		double* vector = new double[Cols];
-		RandomizeArray(vector, Cols);
+		if (argc == 5)
+		{
+		int minRand, maxRand;
+			minRand = atoi(argv[3]);
+			maxRand = atoi(argv[4]);
+			if (maxRand < minRand)
+				return 1;
+		RandomizeArray(array, Rows*Cols, minRand, maxRand);
+		RandomizeArray(vector, Cols, minRand, maxRand);
+		}
+		else 
+		{
+			RandomizeArray(array, Rows*Cols);
+			RandomizeArray(vector, Cols);
+		}
 		PrintVector(vector, Cols);
 		cout << endl;
 		PrintMatrix(array, Rows, Cols);
@@ -88,16 +102,35 @@ int main(int argc, char* argv[])
 			timef = MPI_Wtime();
 			tickt = MPI_Wtick();
 			int Rows, Cols;
-			if (argc != 3)
+			if (argc != 5 && argc != 3)
 				return 1;
 			Rows = atoi(argv[2]);
 			Cols = atoi(argv[1]);
 			if (Cols < 1 || Rows < 1)
+			{
+				MPI_Finalize();
 				return 1;
+			}
 			double* array = new double[Rows*Cols];
-			RandomizeArray(array, Rows*Cols);
 			double* vector = new double[Cols];
-			RandomizeArray(vector, Cols);
+			if (argc == 5)
+			{
+				int minRand, maxRand;
+				minRand = atoi(argv[3]);
+				maxRand = atoi(argv[4]);
+				if (maxRand < minRand)
+				{
+					MPI_Finalize();
+					return 1;
+				}
+				RandomizeArray(array, Rows*Cols, minRand, maxRand);
+				RandomizeArray(vector, Cols, minRand, maxRand);
+			}
+			else
+			{
+				RandomizeArray(array, Rows*Cols);
+				RandomizeArray(vector, Cols);
+			}
 			PrintVector(vector, Cols);
 			cout << endl;
 			PrintMatrix(array, Rows, Cols);
@@ -132,10 +165,7 @@ int main(int argc, char* argv[])
 			}
 			MPI_Gatherv(res, sizes[0], MPI_DOUBLE, result, sizes, place, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 			cout << endl << "Result vector is" <<endl;
-			for (int i = 0; i < Rows; i++)
-			{
-				cout  << result[i] << "  ";
-			}
+			PrintVector(result, Rows);
 			times = MPI_Wtime();
 			cout << endl;
 			cout << "time: " << (times - timef) << endl;
