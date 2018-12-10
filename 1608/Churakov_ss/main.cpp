@@ -122,10 +122,10 @@ void ElimPointsOnLines(double* X, double* Y, int* Envelope, int& Size)
 	int i = 1;
 	while (i != Size)
 	{
-		if ((X[Envelope[i]] - X[Envelope[i-1]])*(Y[Envelope[i+1]] - Y[Envelope[i]]) == (X[Envelope[i+1]] - X[Envelope[i]])*(Y[Envelope[i]] - Y[Envelope[i-1]]))
+		if ((double)((double)(X[Envelope[i]] - X[Envelope[i-1]])*(double)(Y[Envelope[i+1]] - Y[Envelope[i]])) == (double)((double)(X[Envelope[i+1]] - X[Envelope[i]])*(double)(Y[Envelope[i]] - Y[Envelope[i-1]])))
 		{
 			int j = 0;
-			while (i + j < Size-1)
+			while (i + j < Size)
 			{
 				Envelope[i+j] = Envelope[i+j + 1];
 				j++;
@@ -278,8 +278,10 @@ int main(int argc, char* argv[])
 					double* X_buf = new double[ProcNum];
 					double* Y_buf = new double[ProcNum];
 					int EnvPoint;
-					int* Envelope = new int[Size + 1];
-					int* buf = new int[basesize];
+//					int* Envelope = new int[Size + 1];
+					int* Envelope;
+					Envelope = (int*)malloc(sizeof(int) * 5);
+					int* buf = new int[ProcNum];
 					int* sizes = new int[ProcNum];
 					int* place = new int[ProcNum];
 					sizes[0] = basesize;
@@ -325,6 +327,8 @@ int main(int argc, char* argv[])
 							X_buf[i] = X_coord[buf[i]];
 							Y_buf[i] = Y_coord[buf[i]];
 						}
+						if (PNum == 5)
+							Envelope = (int*)realloc(Envelope,sizeof(int) * (PNum+100));
 						Envelope[PNum] = buf[FindPWithMinAngle(X_buf, Y_buf, ProcNum, X_coord[Envelope[PNum - 2]], Y_coord[Envelope[PNum - 2]],
 							X_coord[Envelope[PNum - 1]], Y_coord[Envelope[PNum - 1]])];
 					}
@@ -358,7 +362,10 @@ int main(int argc, char* argv[])
 					{
 						cout << setw(3) << X_coord[Envelope[i]] << ", " << Y_coord[Envelope[i]] << "; ";
 					}
-					delete[] Envelope;
+					times = MPI_Wtime();
+					cout << "time: " << (times - timef) << endl;
+//					delete[] Envelope;
+					free(Envelope);
 					delete[] EnvelopeForCheck;
 					delete[] X_coord;
 					delete[] X_loc;
@@ -366,7 +373,6 @@ int main(int argc, char* argv[])
 					delete[] Y_coord;
 					delete[] Y_loc;
 					delete[] Y_buf;
-					delete[] buf;
 					delete[] sizes;
 					delete[] place;
 					
