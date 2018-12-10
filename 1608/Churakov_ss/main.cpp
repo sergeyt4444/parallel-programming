@@ -107,7 +107,7 @@ int* FindEnvLinear(double* X_coord, double* Y_coord, int Size, int& PNum)
 	int FirstPoint = FindBLPoint(X_coord, Y_coord, Size);
 	int* Envelope = new int[Size + 1];
 	Envelope[0] = FirstPoint;
-	Envelope[1] = FindPWithMinAngle(X_coord, Y_coord, Size, X_coord[FirstPoint], Y_coord[FirstPoint], X_coord[FirstPoint] + 0.5, Y_coord[FirstPoint]);
+	Envelope[1] = FindPWithMinAngle(X_coord, Y_coord, Size, X_coord[FirstPoint] - 1, Y_coord[FirstPoint], X_coord[FirstPoint], Y_coord[FirstPoint]);
 	PNum = 1;
 	while (Envelope[PNum] != FirstPoint)
 	{
@@ -308,14 +308,14 @@ int main(int argc, char* argv[])
 					Envelope[0] = FirstPoint;
 					MPI_Bcast(X_coord + FirstPoint, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 					MPI_Bcast(Y_coord + FirstPoint, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-					EnvPoint = FindPWithMinAngle(X_loc, Y_loc, basesize, X_coord[FirstPoint], Y_coord[FirstPoint], X_coord[FirstPoint] + 0.5, Y_coord[FirstPoint]);
+					EnvPoint = FindPWithMinAngle(X_loc, Y_loc, basesize, X_coord[FirstPoint]-1, Y_coord[FirstPoint], X_coord[FirstPoint] , Y_coord[FirstPoint]);
 					MPI_Gather(&EnvPoint, 1, MPI_INT, buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
 					for (int i = 0; i < ProcNum; i++)
 					{
 						X_buf[i] = X_coord[buf[i]];
 						Y_buf[i] = Y_coord[buf[i]];
 					}
-					Envelope[1] = buf[FindPWithMinAngle(X_buf, Y_buf, ProcNum, X_coord[FirstPoint], Y_coord[FirstPoint], X_coord[FirstPoint] + 0.5, Y_coord[FirstPoint])];
+					Envelope[1] = buf[FindPWithMinAngle(X_buf, Y_buf, ProcNum, X_coord[FirstPoint]-1, Y_coord[FirstPoint], X_coord[FirstPoint], Y_coord[FirstPoint])];
 					while (Envelope[PNum] != FirstPoint)
 					{
 						PNum++;
@@ -408,7 +408,7 @@ int main(int argc, char* argv[])
 				MPI_Gather(&LocalFP, 1, MPI_INT, 0, 0, MPI_INT, 0, MPI_COMM_WORLD);
 				MPI_Bcast(&x1, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 				MPI_Bcast(&y1, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-				EnvPoint = FindPWithMinAngle(X_coord, Y_coord, PointPerProc, x1, y1, x1 + 0.5, y1) + basesize + (ProcRank - 1)* PointPerProc;
+				EnvPoint = FindPWithMinAngle(X_coord, Y_coord, PointPerProc, x1-1, y1, x1 , y1) + basesize + (ProcRank - 1)* PointPerProc;
 				MPI_Gather(&EnvPoint, 1, MPI_INT, 0, 0, MPI_INT, 0, MPI_COMM_WORLD);
 				MPI_Bcast(&x2, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 				MPI_Bcast(&y2, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
