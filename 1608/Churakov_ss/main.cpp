@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cmath>
 #include "mpi.h"
+#define step 1000
 using namespace std;
 
 void RandomizeArray(double* rarray, int size, int min = -50, int max = 50)
@@ -280,7 +281,8 @@ int main(int argc, char* argv[])
 					int EnvPoint;
 //					int* Envelope = new int[Size + 1];
 					int* Envelope;
-					Envelope = (int*)malloc(sizeof(int) * 5);
+					int dynsize = step;
+					Envelope = (int*)malloc(sizeof(int) * dynsize);
 					int* buf = new int[ProcNum];
 					int* sizes = new int[ProcNum];
 					int* place = new int[ProcNum];
@@ -327,8 +329,11 @@ int main(int argc, char* argv[])
 							X_buf[i] = X_coord[buf[i]];
 							Y_buf[i] = Y_coord[buf[i]];
 						}
-						if (PNum == 5)
-							Envelope = (int*)realloc(Envelope,sizeof(int) * (PNum+100));
+						if (PNum == dynsize)
+						{
+							dynsize += step;
+							Envelope = (int*)realloc(Envelope, sizeof(int) * (dynsize));
+						}
 						Envelope[PNum] = buf[FindPWithMinAngle(X_buf, Y_buf, ProcNum, X_coord[Envelope[PNum - 2]], Y_coord[Envelope[PNum - 2]],
 							X_coord[Envelope[PNum - 1]], Y_coord[Envelope[PNum - 1]])];
 					}
