@@ -369,15 +369,12 @@ int main(int argc, char* argv[])
 						MPI_Gather(&EnvPoint, 1, MPI_INT, buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
 						for (int i = 0; i < ProcNum; i++)
 						{
-							if (buf[i] >= 0)
+							if (buf[i] < 0)
 							{
-								if (buf[i] < 0)
-								{
-									buf[i] = buf[0];
-								}
-								X_buf[i] = X_coord[buf[i]];
-								Y_buf[i] = Y_coord[buf[i]];
+								buf[i] = buf[0];
 							}
+							X_buf[i] = X_coord[buf[i]];
+							Y_buf[i] = Y_coord[buf[i]];
 						}
 						if (PNum == dynsize)
 						{
