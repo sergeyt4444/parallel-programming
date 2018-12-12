@@ -54,6 +54,10 @@ void ReinitEqPoints(double* X, double* Y, int Size, int min = -50, int max = 50)
 
 int FindBLPoint(double* X, double* Y, int Size)
 {
+	if (Size < 1)
+	{
+		return -1;
+	}
 	int pointInd = 0;
 	for (int i = 1; i < Size; i++)
 	{
@@ -62,6 +66,26 @@ int FindBLPoint(double* X, double* Y, int Size)
 		else
 		{
 			if (Y[i] == Y[pointInd] && X[i] < X[pointInd])
+				pointInd = i;
+		}
+	}
+	return pointInd;
+}
+
+int FindTRPoint(double* X, double* Y, int Size)
+{
+	if (Size < 1)
+	{
+		return -1;
+	}
+	int pointInd = 0;
+	for (int i = 1; i < Size; i++)
+	{
+		if (Y[i] > Y[pointInd])
+			pointInd = i;
+		else
+		{
+			if (Y[i] == Y[pointInd] && X[i] > X[pointInd])
 				pointInd = i;
 		}
 	}
@@ -201,10 +225,22 @@ int main(int argc, char* argv[])
 				int PNum = 0;
 				Envelope = FindEnvLinear(X_coord, Y_coord, Size, PNum);
 				ElimPointsOnLines(X_coord, Y_coord,Envelope, PNum);
-				cout << "Result chain of points is" << endl;
-				for (int i = 0; i < PNum; i++)
+				if (PNum < 3)
 				{
-					cout << setw(3) << X_coord[Envelope[i]] << ", " << Y_coord[Envelope[i]] << "; ";
+					cout << "Result chain of points is a line" << endl;
+					int point;
+					point = FindBLPoint(X_coord, Y_coord, Size);
+					cout << setw(3) << X_coord[point] << ", " << Y_coord[point] << "; ";
+					point = FindTRPoint(X_coord, Y_coord, Size);
+					cout << setw(3) << X_coord[point] << ", " << Y_coord[point] << "; ";
+				}
+				else
+				{
+					cout << "Result chain of points is" << endl;
+					for (int i = 0; i < PNum; i++)
+					{
+						cout << setw(3) << X_coord[Envelope[i]] << ", " << Y_coord[Envelope[i]] << "; ";
+					}
 				}
 				delete[] Envelope;
 			}
@@ -279,7 +315,6 @@ int main(int argc, char* argv[])
 					double* X_buf = new double[ProcNum];
 					double* Y_buf = new double[ProcNum];
 					int EnvPoint;
-//					int* Envelope = new int[Size + 1];
 					int* Envelope;
 					int dynsize = step;
 					Envelope = (int*)malloc(sizeof(int) * dynsize);
@@ -300,6 +335,10 @@ int main(int argc, char* argv[])
 					MPI_Gather(&LocalFP, 1, MPI_INT, buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
 					for (int i = 0; i < ProcNum; i++)
 					{
+						if (buf[i] < 0)
+						{
+							buf[i] = buf[0];
+						}
 						X_buf[i] = X_coord[buf[i]];
 						Y_buf[i] = Y_coord[buf[i]];
 					}
@@ -312,6 +351,10 @@ int main(int argc, char* argv[])
 					MPI_Gather(&EnvPoint, 1, MPI_INT, buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
 					for (int i = 0; i < ProcNum; i++)
 					{
+						if (buf[i] < 0)
+						{
+							buf[i] = buf[0];
+						}
 						X_buf[i] = X_coord[buf[i]];
 						Y_buf[i] = Y_coord[buf[i]];
 					}
@@ -326,8 +369,15 @@ int main(int argc, char* argv[])
 						MPI_Gather(&EnvPoint, 1, MPI_INT, buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
 						for (int i = 0; i < ProcNum; i++)
 						{
-							X_buf[i] = X_coord[buf[i]];
-							Y_buf[i] = Y_coord[buf[i]];
+							if (buf[i] >= 0)
+							{
+								if (buf[i] < 0)
+								{
+									buf[i] = buf[0];
+								}
+								X_buf[i] = X_coord[buf[i]];
+								Y_buf[i] = Y_coord[buf[i]];
+							}
 						}
 						if (PNum == dynsize)
 						{
@@ -340,8 +390,6 @@ int main(int argc, char* argv[])
 					MPI_Bcast(X_coord + Envelope[PNum - 1], 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 					MPI_Bcast(Y_coord + Envelope[PNum - 1], 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 					ElimPointsOnLines(X_coord, Y_coord, Envelope, PNum);
-
-
 					int* EnvelopeForCheck = new int[Size + 1];
 					int PNumForCheck = 0;
 					EnvelopeForCheck = FindEnvLinear(X_coord, Y_coord, Size, PNumForCheck);
@@ -362,14 +410,25 @@ int main(int argc, char* argv[])
 						cout << "Results checked successfully" << endl;
 					else
 						cout << "Results dont match" << endl;
-					cout << "Result chain of points is" << endl;
-					for (int i = 0; i < PNum; i++)
+					if (PNum < 3)
 					{
-						cout << setw(3) << X_coord[Envelope[i]] << ", " << Y_coord[Envelope[i]] << "; ";
+						cout << "Result chain of points is a line" << endl;
+						int point;
+						point = FindBLPoint(X_coord, Y_coord, Size);
+						cout << setw(3) << X_coord[point] << ", " << Y_coord[point] << "; ";
+						point = FindTRPoint(X_coord, Y_coord, Size);
+						cout << setw(3) << X_coord[point] << ", " << Y_coord[point] << "; ";
+					}
+					else
+					{
+						cout << "Result chain of points is" << endl;
+						for (int i = 0; i < PNum; i++)
+						{
+							cout << setw(3) << X_coord[Envelope[i]] << ", " << Y_coord[Envelope[i]] << "; ";
+						}
 					}
 					times = MPI_Wtime();
 					cout << "time: " << (times - timef) << endl;
-//					delete[] Envelope;
 					free(Envelope);
 					delete[] EnvelopeForCheck;
 					delete[] X_coord;
@@ -380,12 +439,8 @@ int main(int argc, char* argv[])
 					delete[] Y_buf;
 					delete[] sizes;
 					delete[] place;
-					
-
 				}
 			}
-
-
 		}
 		else
 		{
@@ -404,33 +459,51 @@ int main(int argc, char* argv[])
 				MPI_Scatterv(0, 0, 0, MPI_DOUBLE, X_coord, PointPerProc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 				MPI_Scatterv(0, 0, 0, MPI_DOUBLE, Y_coord, PointPerProc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 				int LocalFP = FindBLPoint(X_coord, Y_coord, PointPerProc);
-				LocalFP += basesize + (ProcRank - 1)* PointPerProc;
+				if (LocalFP >= 0)
+				{
+					LocalFP += basesize + (ProcRank - 1)* PointPerProc;
+				}
+				else
+				{
+					LocalFP = -1;
+				}
 				MPI_Gather(&LocalFP, 1, MPI_INT, 0, 0, MPI_INT, 0, MPI_COMM_WORLD);
 				MPI_Bcast(&x1, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 				MPI_Bcast(&y1, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-				EnvPoint = FindPWithMinAngle(X_coord, Y_coord, PointPerProc, x1-1, y1, x1 , y1) + basesize + (ProcRank - 1)* PointPerProc;
+				EnvPoint = FindPWithMinAngle(X_coord, Y_coord, PointPerProc, x1-1, y1, x1 , y1);
+				if (EnvPoint >= 0)
+				{
+					EnvPoint += basesize + (ProcRank - 1)* PointPerProc;
+				}
+				else
+				{
+					EnvPoint = -1;
+				}
 				MPI_Gather(&EnvPoint, 1, MPI_INT, 0, 0, MPI_INT, 0, MPI_COMM_WORLD);
 				MPI_Bcast(&x2, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 				MPI_Bcast(&y2, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 				while (x1 != x2 || y1 != y2)
 				{
-					EnvPoint = FindPWithMinAngle(X_coord, Y_coord, PointPerProc, x1, y1, x2, y2) + basesize + (ProcRank - 1)* PointPerProc;
+					EnvPoint = FindPWithMinAngle(X_coord, Y_coord, PointPerProc, x1, y1, x2, y2);
+					if (EnvPoint >= 0)
+					{
+						EnvPoint += basesize + (ProcRank - 1)* PointPerProc;
+					}
+					else
+					{
+						EnvPoint = -1;
+					}
 					MPI_Gather(&EnvPoint, 1, MPI_INT, 0, 0, MPI_INT, 0, MPI_COMM_WORLD);
 					x1 = x2;
 					y1 = y2;
 					MPI_Bcast(&x2, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 					MPI_Bcast(&y2, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 				}
-
-
 				delete[] X_coord;
 				delete[] Y_coord;
 			}
 		}
-
 	}
-
 	MPI_Finalize();
-
 	return 0;
 }
