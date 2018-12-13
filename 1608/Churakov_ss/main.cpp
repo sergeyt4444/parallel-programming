@@ -164,10 +164,30 @@ int main(int argc, char* argv[])
 				place[i] = place[i - 1] + sizes[i - 1];
 			}
 			MPI_Gatherv(res, sizes[0], MPI_DOUBLE, result, sizes, place, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			double* ResultforCheck = new double[Rows];
+			for (int i = 0; i < Rows; i++)
+			{
+				ResultforCheck[i] = MultRowByVec(array + i * Cols, vector, Cols);
+			}
+			int Correct = 1;
+			for (int i = 0; i < Rows; i++)
+			{
+				if (result[i] != ResultforCheck[i])
+					Correct = 0;
+			}
+			cout << endl;
+			if (Correct)
+			{
+				cout << "Results were checked successfully" << endl;
+			}
+			else
+			{
+				cout << "Results dont match" << endl;
+			}
 			cout << endl << "Result vector is" <<endl;
 			PrintVector(result, Rows);
-			times = MPI_Wtime();
 			cout << endl;
+			times = MPI_Wtime();
 			cout << "time: " << (times - timef) << endl;
 			delete[] array;
 			delete[] vector;
