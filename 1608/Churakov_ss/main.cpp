@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 	MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
 	if (ProcNum == 1)
 	{
-		double timef, times, tickt;
+		double timef, times, timepart, tickt;
 		timef = MPI_Wtime();
 		tickt = MPI_Wtick();
 		int Size;
@@ -206,6 +206,7 @@ int main(int argc, char* argv[])
 		}
 		PrintPoints(X_coord, Y_coord, Size);
 		cout << endl;
+		timepart = MPI_Wtime();
 		if (Size == 1)
 		{
 			cout << "Result chain of points is a single point:" << endl;
@@ -247,6 +248,7 @@ int main(int argc, char* argv[])
 		}
 		times = MPI_Wtime();
 		cout << "time: " << (times - timef) << endl;
+		cout << "time without initialisation and preparations: " << (times-timepart) << endl;
 		delete[] X_coord;
 		delete[] Y_coord;
 	}
@@ -255,7 +257,7 @@ int main(int argc, char* argv[])
 		if (ProcRank == 0)
 		{
 
-			double timef, times, tickt;
+			double timef, times, timepart, timepartf, tickt;
 			timef = MPI_Wtime();
 			tickt = MPI_Wtick();
 			int Size;
@@ -288,6 +290,7 @@ int main(int argc, char* argv[])
 				ReinitEqPoints(X_coord, Y_coord, Size);
 			}
 			PrintPoints(X_coord, Y_coord, Size);
+			timepart = MPI_Wtime();
 			cout << endl;
 			MPI_Bcast(&Size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 			if (Size == 1)
@@ -387,6 +390,7 @@ int main(int argc, char* argv[])
 					MPI_Bcast(X_coord + Envelope[PNum - 1], 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 					MPI_Bcast(Y_coord + Envelope[PNum - 1], 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 					ElimPointsOnLines(X_coord, Y_coord, Envelope, PNum);
+					timepartf = MPI_Wtime();
 					int* EnvelopeForCheck = new int[Size + 1];
 					int PNumForCheck = 0;
 					EnvelopeForCheck = FindEnvLinear(X_coord, Y_coord, Size, PNumForCheck);
@@ -426,6 +430,7 @@ int main(int argc, char* argv[])
 					}
 					times = MPI_Wtime();
 					cout << "time: " << (times - timef) << endl;
+					cout << "time without initialisation and preparations: " << (timepartf-timepart) << endl;
 					free(Envelope);
 					delete[] EnvelopeForCheck;
 					delete[] X_coord;
